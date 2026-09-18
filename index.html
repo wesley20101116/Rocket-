@@ -1,0 +1,2057 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>🚀 火箭回收模擬器</title>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    background:#0b1020;
+    color:#eef3ff;
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+}
+
+.container{
+    max-width:1250px;
+    margin:auto;
+    padding:16px;
+}
+
+.card{
+    background:#151d32;
+    border:1px solid #2b3757;
+    border-radius:20px;
+    padding:18px;
+    box-shadow:0 14px 40px rgba(0,0,0,.35);
+}
+
+h1{
+    margin:0 0 6px;
+    font-size:clamp(25px,4vw,40px);
+}
+
+.subtitle{
+    margin:0 0 18px;
+    color:#aeb9d4;
+}
+
+.layout{
+    display:grid;
+    grid-template-columns:330px 1fr;
+    gap:16px;
+}
+
+.controls{
+    display:grid;
+    gap:9px;
+}
+
+.control{
+    background:#0f1629;
+    border:1px solid #27314d;
+    border-radius:12px;
+    padding:11px;
+}
+
+label{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    font-size:14px;
+}
+
+label b{
+    white-space:nowrap;
+}
+
+input[type="range"]{
+    width:100%;
+    margin-top:9px;
+}
+
+.buttons{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:7px;
+    margin-top:3px;
+}
+
+button{
+    border:0;
+    border-radius:11px;
+    padding:12px 8px;
+    font-weight:800;
+    cursor:pointer;
+}
+
+button:active{
+    transform:scale(.97);
+}
+
+.start{
+    background:#e9eef9;
+    color:#111827;
+}
+
+.stop{
+    background:#37415d;
+    color:white;
+}
+
+.reset{
+    background:#26304a;
+    color:white;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:7px;
+    margin-top:10px;
+}
+
+.stat{
+    background:#0c1325;
+    border-radius:10px;
+    padding:9px;
+}
+
+.stat small{
+    display:block;
+    color:#8f9bb8;
+    margin-bottom:2px;
+}
+
+.stat b{
+    font-size:16px;
+}
+
+.note{
+    margin-top:10px;
+    color:#8995b3;
+    font-size:12px;
+    line-height:1.6;
+}
+
+.scene{
+    width:100%;
+    display:block;
+    background:#070c18;
+    border-radius:15px;
+    min-height:400px;
+}
+
+.legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:9px;
+    color:#b9c4dc;
+    font-size:13px;
+}
+
+@media(max-width:850px){
+    .layout{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:520px){
+    .buttons{
+        grid-template-columns:1fr;
+    }
+
+    .stats{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h1>🚀 火箭回收模擬器</h1>
+
+<p class="subtitle">
+教育用途的簡化 2D 模型：
+上升 → 分離 → 下降 → 反推減速 → 水平修正 → 回到發射點
+</p>
+
+<div class="layout">
+
+<!-- ==================== 控制區 ==================== -->
+
+<aside>
+
+<div class="controls">
+
+<div class="control">
+<label>
+<span>主推力加速度</span>
+<b id="thrustValue">18 m/s²</b>
+</label>
+
+<input
+id="thrust"
+type="range"
+min="5"
+max="40"
+value="18"
+>
+</div>
+
+
+<div class="control">
+<label>
+<span>火箭初始質量</span>
+<b id="massValue">10000 kg</b>
+</label>
+
+<input
+id="mass"
+type="range"
+min="1000"
+max="30000"
+step="100"
+value="10000"
+>
+</div>
+
+
+<div class="control">
+<label>
+<span>燃料量</span>
+<b id="fuelValue">2500 kg</b>
+</label>
+
+<input
+id="fuel"
+type="range"
+min="200"
+max="10000"
+step="100"
+value="2500"
+>
+</div>
+
+
+<div class="control">
+<label>
+<span>分離高度</span>
+<b id="separationValue">3000 m</b>
+</label>
+
+<input
+id="separation"
+type="range"
+min="500"
+max="10000"
+step="100"
+value="3000"
+>
+</div>
+
+
+<div class="control">
+<label>
+<span>反推開始高度</span>
+<b id="brakeValue">1800 m</b>
+</label>
+
+<input
+id="brake"
+type="range"
+min="300"
+max="5000"
+step="100"
+value="1800"
+>
+</div>
+
+
+<div class="control">
+<label>
+<span>反推加速度</span>
+<b id="reverseValue">16 m/s²</b>
+</label>
+
+<input
+id="reverse"
+type="range"
+min="5"
+max="35"
+value="16"
+>
+</div>
+
+
+<div class="control">
+<label>
+<span>空氣阻力係數</span>
+<b id="dragValue">0.012</b>
+</label>
+
+<input
+id="drag"
+type="range"
+min="0"
+max="0.05"
+step="0.001"
+value="0.012"
+>
+</div>
+
+
+<div class="control">
+<label>
+<span>水平風速</span>
+<b id="windValue">8 m/s</b>
+</label>
+
+<input
+id="wind"
+type="range"
+min="-30"
+max="30"
+value="8"
+>
+</div>
+
+
+<div class="buttons">
+
+<button
+class="start"
+id="startButton">
+▶ 發射
+</button>
+
+<button
+class="stop"
+id="stopButton">
+⏸ 停止
+</button>
+
+<button
+class="reset"
+id="resetButton">
+↻ 重設
+</button>
+
+</div>
+
+</div>
+
+
+<!-- ==================== 即時數據 ==================== -->
+
+<div class="stats">
+
+<div class="stat">
+<small>飛行時間</small>
+<b id="time">0.0 s</b>
+</div>
+
+<div class="stat">
+<small>高度</small>
+<b id="altitude">0 m</b>
+</div>
+
+<div class="stat">
+<small>水平位置</small>
+<b id="position">0 m</b>
+</div>
+
+<div class="stat">
+<small>速度</small>
+<b id="speed">0.0 m/s</b>
+</div>
+
+<div class="stat">
+<small>剩餘燃料</small>
+<b id="fuelRemaining">2500 kg</b>
+</div>
+
+<div class="stat">
+<small>目前階段</small>
+<b id="phase">待命</b>
+</div>
+
+</div>
+
+
+<p class="note">
+
+模型包含：
+
+<br>• 高度變化重力
+<br>• 高度變化空氣密度
+<br>• 空氣阻力
+<br>• 水平風速
+<br>• 燃料消耗
+<br>• 質量變化
+<br>• 主推力
+<br>• 反推減速
+<br>• 水平位置修正
+<br>• 分離點、反推點、回收點
+<br>• 即時飛行軌跡
+
+<br><br>
+
+這是教育用簡化模型，
+不代表真實火箭飛行控制系統。
+
+</p>
+
+</aside>
+
+
+<!-- ==================== 模擬畫面 ==================== -->
+
+<section>
+
+<svg
+id="scene"
+class="scene"
+viewBox="0 0 1000 580"
+preserveAspectRatio="xMidYMid meet"
+>
+
+<defs>
+
+<linearGradient
+id="sky"
+x1="0"
+y1="0"
+x2="0"
+y2="1"
+>
+
+<stop
+offset="0%"
+stop-color="#0d1634"
+/>
+
+<stop
+offset="100%"
+stop-color="#1a2942"
+/>
+
+</linearGradient>
+
+</defs>
+
+
+<!-- 天空 -->
+
+<rect
+x="0"
+y="0"
+width="1000"
+height="580"
+fill="url(#sky)"
+/>
+
+
+<!-- 高度線 -->
+
+<g id="altitudeLines"></g>
+
+
+<!-- 地面 -->
+
+<path
+d="
+M0 520
+Q180 485 350 520
+T700 520
+T1000 520
+L1000 580
+L0 580Z
+"
+fill="#17243b"
+/>
+
+<line
+x1="50"
+y1="520"
+x2="950"
+y2="520"
+stroke="#7d8baa"
+stroke-width="2"
+/>
+
+
+<!-- 發射點 -->
+
+<circle
+id="launchPoint"
+cx="500"
+cy="520"
+r="8"
+fill="#55a9ff"
+/>
+
+<text
+x="512"
+y="540"
+fill="#b8c5df"
+font-size="15"
+>
+發射點
+</text>
+
+
+<!-- 飛行軌跡 -->
+
+<path
+id="trajectory"
+d=""
+fill="none"
+stroke="#ffffff"
+stroke-width="3"
+stroke-linecap="round"
+/>
+
+
+<!-- 分離點 -->
+
+<circle
+id="separationPoint"
+r="7"
+fill="#ffd166"
+opacity="0"
+/>
+
+
+<!-- 反推點 -->
+
+<circle
+id="brakePoint"
+r="7"
+fill="#ff6868"
+opacity="0"
+/>
+
+
+<!-- 回收點 -->
+
+<circle
+id="landingPoint"
+r="9"
+fill="#5ee58b"
+opacity="0"
+/>
+
+
+<!-- ==================== 火箭 ==================== -->
+
+<g id="rocket">
+
+<!-- 火箭本體 -->
+
+<path
+d="
+M0,-27
+L9,9
+L0,21
+L-9,9
+Z
+"
+fill="#edf2fb"
+/>
+
+
+<!-- 左翼 -->
+
+<path
+d="
+M-7,8
+L-16,18
+L-5,15
+Z
+"
+fill="#a4afc8"
+/>
+
+
+<!-- 右翼 -->
+
+<path
+d="
+M7,8
+L16,18
+L5,15
+Z
+"
+fill="#a4afc8"
+/>
+
+
+<!-- 火焰 -->
+
+<path
+id="flame"
+d="
+M-4,18
+L0,34
+L4,18
+Z
+"
+fill="#ffb84d"
+/>
+
+</g>
+
+
+<!-- 狀態文字 -->
+
+<text
+id="status"
+x="55"
+y="45"
+fill="#dce5ff"
+font-size="19"
+>
+準備發射
+</text>
+
+<text
+x="55"
+y="70"
+fill="#8f9cba"
+font-size="13"
+>
+高度與水平位置會依飛行狀態自動縮放
+</text>
+
+</svg>
+
+
+<div class="legend">
+
+<span>🔵 發射點</span>
+
+<span>🟡 分離點</span>
+
+<span>🔴 反推點</span>
+
+<span>🟢 回收點</span>
+
+</div>
+
+</section>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   火箭回收模擬器
+   教育用簡化模型
+===================================================== */
+
+
+/* ============================
+   基本常數
+============================ */
+
+const G0 = 9.80665;
+
+const EARTH_RADIUS = 6371000;
+
+const ATMOSPHERE_SCALE_HEIGHT = 8500;
+
+/*
+   模擬時間步長
+*/
+const DT = 0.04;
+
+
+/* ============================
+   快速取得 HTML 元素
+============================ */
+
+const $ = id => document.getElementById(id);
+
+
+/* ============================
+   控制器數值顯示
+============================ */
+
+$("thrust").addEventListener(
+    "input",
+    function(){
+        $("thrustValue").textContent =
+            this.value + " m/s²";
+    }
+);
+
+
+$("mass").addEventListener(
+    "input",
+    function(){
+        $("massValue").textContent =
+            this.value + " kg";
+    }
+);
+
+
+$("fuel").addEventListener(
+    "input",
+    function(){
+
+        $("fuelValue").textContent =
+            this.value + " kg";
+
+        /*
+           如果還沒發射，
+           同步更新顯示
+        */
+
+        if(!running){
+
+            $("fuelRemaining").textContent =
+                this.value + " kg";
+        }
+    }
+);
+
+
+$("separation").addEventListener(
+    "input",
+    function(){
+
+        $("separationValue").textContent =
+            this.value + " m";
+
+    }
+);
+
+
+$("brake").addEventListener(
+    "input",
+    function(){
+
+        $("brakeValue").textContent =
+            this.value + " m";
+
+    }
+);
+
+
+$("reverse").addEventListener(
+    "input",
+    function(){
+
+        $("reverseValue").textContent =
+            this.value + " m/s²";
+
+    }
+);
+
+
+$("drag").addEventListener(
+    "input",
+    function(){
+
+        $("dragValue").textContent =
+            this.value;
+
+    }
+);
+
+
+$("wind").addEventListener(
+    "input",
+    function(){
+
+        $("windValue").textContent =
+            this.value + " m/s";
+
+    }
+);
+
+
+/* =====================================================
+   模擬狀態
+===================================================== */
+
+let state;
+
+let running = false;
+
+let timer = null;
+
+
+/* =====================================================
+   重設模擬
+===================================================== */
+
+function resetSimulation(){
+
+    running = false;
+
+    if(timer !== null){
+
+        clearInterval(timer);
+
+        timer = null;
+
+    }
+
+
+    state = {
+
+        /*
+           時間
+        */
+        time:0,
+
+        /*
+           水平位置
+        */
+        x:0,
+
+        /*
+           高度
+        */
+        y:0,
+
+        /*
+           水平速度
+        */
+        vx:0,
+
+        /*
+           垂直速度
+        */
+        vy:0,
+
+        /*
+           燃料
+        */
+        fuel:Number($("fuel").value),
+
+        /*
+           模擬階段
+        */
+        phase:"待命",
+
+        /*
+           是否分離
+        */
+        separated:false,
+
+        /*
+           是否開始反推
+        */
+        braking:false,
+
+        /*
+           是否著陸
+        */
+        landed:false,
+
+        /*
+           飛行軌跡
+        */
+        trajectory:[[0,0]]
+
+    };
+
+
+    /*
+       清除事件點
+    */
+
+    $("separationPoint")
+        .setAttribute("opacity","0");
+
+    $("brakePoint")
+        .setAttribute("opacity","0");
+
+    $("landingPoint")
+        .setAttribute("opacity","0");
+
+
+    render();
+
+}
+
+
+/* =====================================================
+   儲存事件點
+===================================================== */
+
+function setMarker(
+    elementId,
+    x,
+    y
+){
+
+    const marker = $(elementId);
+
+    marker.dataset.x = x;
+
+    marker.dataset.y = y;
+
+    marker.setAttribute(
+        "opacity",
+        "1"
+    );
+
+}
+
+
+/* =====================================================
+   計算重力
+===================================================== */
+
+function calculateGravity(
+    altitude
+){
+
+    return G0 *
+        Math.pow(
+            EARTH_RADIUS /
+            (EARTH_RADIUS + altitude),
+            2
+        );
+
+}
+
+
+/* =====================================================
+   計算空氣密度
+===================================================== */
+
+function calculateAirDensity(
+    altitude
+){
+
+    return 1.225 *
+        Math.exp(
+            -altitude /
+            ATMOSPHERE_SCALE_HEIGHT
+        );
+
+}
+
+
+/* =====================================================
+   單一步驟
+===================================================== */
+
+function simulationStep(){
+
+    /*
+       讀取設定
+    */
+
+    const thrust =
+        Number($("thrust").value);
+
+    const initialMass =
+        Number($("mass").value);
+
+    const initialFuel =
+        Number($("fuel").value);
+
+    const separationHeight =
+        Number($("separation").value);
+
+    const brakeHeight =
+        Number($("brake").value);
+
+    const reverseAcceleration =
+        Number($("reverse").value);
+
+    const dragCoefficient =
+        Number($("drag").value);
+
+    const wind =
+        Number($("wind").value);
+
+
+    /*
+       當前高度
+    */
+
+    const altitude =
+        Math.max(
+            0,
+            state.y
+        );
+
+
+    /*
+       重力
+    */
+
+    const gravity =
+        calculateGravity(
+            altitude
+        );
+
+
+    /*
+       空氣密度
+    */
+
+    const airDensity =
+        calculateAirDensity(
+            altitude
+        );
+
+
+    /*
+       簡化質量模型
+
+       初始質量 = 乾重 + 燃料
+
+       乾重約為初始質量的 55%
+    */
+
+    const dryMass =
+        initialMass * 0.55;
+
+
+    const fuelFraction =
+        Math.max(
+            0,
+            Math.min(
+                1,
+                state.fuel /
+                Math.max(
+                    1,
+                    initialFuel
+                )
+            )
+        );
+
+
+    const currentMass =
+        dryMass +
+        initialMass *
+        0.45 *
+        fuelFraction;
+
+
+    /*
+       加速度
+    */
+
+    let ax = 0;
+
+    let ay = -gravity;
+
+
+    /* =================================================
+       上升階段
+    ================================================= */
+
+    if(!state.separated){
+
+        state.phase = "上升";
+
+
+        /*
+           燃料存在時才有主推力
+        */
+
+        if(state.fuel > 0){
+
+            ay += thrust;
+
+
+            /*
+               教學用燃料消耗模型
+            */
+
+            const fuelRate =
+                (thrust / 18) *
+                (initialMass / 10000) *
+                18;
+
+
+            state.fuel =
+                Math.max(
+                    0,
+                    state.fuel -
+                    fuelRate * DT
+                );
+
+        }
+
+
+        /*
+           達到分離高度
+        */
+
+        if(
+            state.y >=
+            separationHeight
+        ){
+
+            state.separated = true;
+
+            state.phase = "分離";
+
+
+            /*
+               固定記錄分離位置
+            */
+
+            setMarker(
+                "separationPoint",
+                state.x,
+                state.y
+            );
+
+        }
+
+    }
+
+
+    /* =================================================
+       分離後
+    ================================================= */
+
+    else{
+
+        /*
+           尚未反推
+        */
+
+        if(
+            state.y >
+            brakeHeight
+        ){
+
+            state.phase = "下降";
+
+        }
+
+
+        /*
+           到達反推高度
+        */
+
+        else{
+
+            if(!state.braking){
+
+                state.braking = true;
+
+                state.phase =
+                    "反推減速";
+
+
+                /*
+                   固定記錄反推位置
+                */
+
+                setMarker(
+                    "brakePoint",
+                    state.x,
+                    state.y
+                );
+
+            }
+
+        }
+
+
+        /*
+           反推
+        */
+
+        if(
+            state.braking &&
+            state.y > 10
+        ){
+
+            ay +=
+                reverseAcceleration;
+
+
+            /*
+               反推燃料消耗
+            */
+
+            if(state.fuel > 0){
+
+                state.fuel =
+                    Math.max(
+                        0,
+                        state.fuel -
+                        reverseAcceleration *
+                        0.35 *
+                        DT
+                    );
+
+            }
+
+        }
+
+
+        /* =================================================
+           水平回收控制
+        ================================================= */
+
+        /*
+           目標位置：
+
+           x = 0
+
+           也就是原始發射位置
+        */
+
+        const positionError =
+            -state.x;
+
+
+        const velocityError =
+            -state.vx;
+
+
+        /*
+           簡化 PD 控制器
+
+           注意：
+
+           這是教育模型，
+           不是真實飛控演算法。
+        */
+
+        ax +=
+            0.010 *
+            positionError;
+
+
+        ax +=
+            0.070 *
+            velocityError;
+
+
+        /*
+           考慮風
+        */
+
+        ax +=
+            0.010 *
+            (wind - state.vx);
+
+    }
+
+
+    /* =================================================
+       空氣阻力
+    ================================================= */
+
+    /*
+       相對風速
+    */
+
+    const relativeVx =
+        state.vx - wind;
+
+
+    const relativeVy =
+        state.vy;
+
+
+    /*
+       教學用阻力尺度
+    */
+
+    const dragScale =
+        0.00018;
+
+
+    /*
+       水平阻力
+    */
+
+    ax +=
+        -dragScale *
+        airDensity *
+        dragCoefficient *
+        relativeVx *
+        Math.abs(relativeVx) /
+        Math.max(
+            1,
+            currentMass
+        ) *
+        100000;
+
+
+    /*
+       垂直阻力
+    */
+
+    ay +=
+        -dragScale *
+        airDensity *
+        dragCoefficient *
+        relativeVy *
+        Math.abs(relativeVy) /
+        Math.max(
+            1,
+            currentMass
+        ) *
+        100000;
+
+
+    /* =================================================
+       數值積分
+    ================================================= */
+
+    state.vx +=
+        ax * DT;
+
+
+    state.vy +=
+        ay * DT;
+
+
+    state.x +=
+        state.vx * DT;
+
+
+    state.y +=
+        state.vy * DT;
+
+
+    state.time += DT;
+
+
+    /*
+       儲存軌跡
+    */
+
+    state.trajectory.push([
+        state.x,
+        state.y
+    ]);
+
+
+    /*
+       限制軌跡長度，
+       避免瀏覽器負擔太大
+    */
+
+    if(
+        state.trajectory.length >
+        3500
+    ){
+
+        state.trajectory.shift();
+
+    }
+
+
+    /* =================================================
+       著陸
+    ================================================= */
+
+    if(
+        state.y <= 0 &&
+        state.time > 1
+    ){
+
+        state.y = 0;
+
+        state.vy = 0;
+
+
+        state.landed = true;
+
+
+        /*
+           判斷是否回到原始發射位置
+
+           ±30 m 視為成功回收
+        */
+
+        if(
+            Math.abs(state.x) <= 30
+        ){
+
+            state.phase =
+                "成功回收";
+
+        }
+
+        else{
+
+            state.phase =
+                "已著陸｜偏離 " +
+                Math.abs(state.x).toFixed(0) +
+                " m";
+
+        }
+
+
+        /*
+           記錄回收點
+        */
+
+        setMarker(
+            "landingPoint",
+            state.x,
+            0
+        );
+
+
+        running = false;
+
+
+        if(timer !== null){
+
+            clearInterval(timer);
+
+            timer = null;
+
+        }
+
+    }
+
+
+    render();
+
+}
+
+
+/* =====================================================
+   繪製畫面
+===================================================== */
+
+function render(){
+
+    /*
+       所有軌跡點
+    */
+
+    const points =
+        state.trajectory;
+
+
+    /*
+       計算水平範圍
+    */
+
+    let minX = -150;
+
+    let maxX = 150;
+
+
+    for(
+        const point of points
+    ){
+
+        minX =
+            Math.min(
+                minX,
+                point[0]
+            );
+
+
+        maxX =
+            Math.max(
+                maxX,
+                point[0]
+            );
+
+    }
+
+
+    minX =
+        Math.min(
+            minX,
+            state.x - 100
+        );
+
+
+    maxX =
+        Math.max(
+            maxX,
+            state.x + 100
+        );
+
+
+    /*
+       計算最高高度
+    */
+
+    let maxY = 1000;
+
+
+    for(
+        const point of points
+    ){
+
+        maxY =
+            Math.max(
+                maxY,
+                point[1]
+            );
+
+    }
+
+
+    maxY =
+        Math.max(
+            maxY,
+            state.y
+        );
+
+
+    /*
+       世界寬度
+    */
+
+    const worldWidth =
+        Math.max(
+            300,
+            maxX - minX
+        );
+
+
+    /*
+       自動縮放
+    */
+
+    const scaleX =
+        820 /
+        worldWidth;
+
+
+    const scaleY =
+        440 /
+        maxY;
+
+
+    const scale =
+        Math.min(
+            scaleX,
+            scaleY
+        );
+
+
+    /*
+       世界中心
+    */
+
+    const centerX =
+        (minX + maxX) / 2;
+
+
+    /*
+       世界座標 → SVG 座標
+    */
+
+    function screenX(x){
+
+        return 500 +
+            (x - centerX) *
+            scale;
+
+    }
+
+
+    function screenY(y){
+
+        return 520 -
+            y * scale;
+
+    }
+
+
+    /* =================================================
+       軌跡
+    ================================================= */
+
+    const path =
+        points
+        .map(
+            (point,index)=>{
+
+                const x =
+                    screenX(point[0])
+                    .toFixed(2);
+
+                const y =
+                    screenY(point[1])
+                    .toFixed(2);
+
+
+                return (
+                    index === 0
+                    ? "M"
+                    : "L"
+                ) +
+                x +
+                " " +
+                y;
+
+            }
+        )
+        .join(" ");
+
+
+    $("trajectory")
+        .setAttribute(
+            "d",
+            path
+        );
+
+
+    /* =================================================
+       火箭位置
+    ================================================= */
+
+    $("rocket")
+        .setAttribute(
+            "transform",
+            "translate(" +
+            screenX(state.x) +
+            " " +
+            screenY(state.y) +
+            ")"
+        );
+
+
+    /* =================================================
+       火焰
+    ================================================= */
+
+    const engineActive =
+        state.phase === "上升" ||
+        state.phase === "反推減速";
+
+
+    $("flame")
+        .setAttribute(
+            "opacity",
+            engineActive
+            ? "1"
+            : "0"
+        );
+
+
+    /* =================================================
+       事件點
+    ================================================= */
+
+    const markers = [
+
+        "separationPoint",
+
+        "brakePoint",
+
+        "landingPoint"
+
+    ];
+
+
+    for(
+        const id of markers
+    ){
+
+        const marker = $(id);
+
+
+        if(
+            marker.getAttribute(
+                "opacity"
+            ) === "1"
+        ){
+
+            const x =
+                Number(
+                    marker.dataset.x
+                );
+
+
+            const y =
+                Number(
+                    marker.dataset.y
+                );
+
+
+            marker.setAttribute(
+                "cx",
+                screenX(x)
+            );
+
+
+            marker.setAttribute(
+                "cy",
+                screenY(y)
+            );
+
+        }
+
+    }
+
+
+    /* =================================================
+       高度線
+    ================================================= */
+
+    const lines =
+        $("altitudeLines");
+
+
+    lines.innerHTML = "";
+
+
+    let lineStep;
+
+
+    if(maxY > 20000){
+
+        lineStep = 5000;
+
+    }
+
+    else if(maxY > 10000){
+
+        lineStep = 2500;
+
+    }
+
+    else if(maxY > 5000){
+
+        lineStep = 1000;
+
+    }
+
+    else{
+
+        lineStep = 500;
+
+    }
+
+
+    for(
+        let h = lineStep;
+        h <= maxY;
+        h += lineStep
+    ){
+
+        const y =
+            screenY(h);
+
+
+        if(
+            y < 20 ||
+            y > 510
+        ){
+
+            continue;
+
+        }
+
+
+        /*
+           線
+        */
+
+        const line =
+            document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "line"
+            );
+
+
+        line.setAttribute(
+            "x1",
+            "50"
+        );
+
+
+        line.setAttribute(
+            "x2",
+            "950"
+        );
+
+
+        line.setAttribute(
+            "y1",
+            y
+        );
+
+
+        line.setAttribute(
+            "y2",
+            y
+        );
+
+
+        line.setAttribute(
+            "stroke",
+            "#394764"
+        );
+
+
+        line.setAttribute(
+            "stroke-width",
+            "1"
+        );
+
+
+        line.setAttribute(
+            "stroke-dasharray",
+            "5 7"
+        );
+
+
+        /*
+           高度文字
+        */
+
+        const text =
+            document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "text"
+            );
+
+
+        text.setAttribute(
+            "x",
+            "60"
+        );
+
+
+        text.setAttribute(
+            "y",
+            y - 5
+        );
+
+
+        text.setAttribute(
+            "fill",
+            "#7f8cab"
+        );
+
+
+        text.setAttribute(
+            "font-size",
+            "12"
+        );
+
+
+        text.textContent =
+            h + " m";
+
+
+        lines.appendChild(line);
+
+        lines.appendChild(text);
+
+    }
+
+
+    /* =================================================
+       更新即時資料
+    ================================================= */
+
+    $("time").textContent =
+        state.time.toFixed(1) +
+        " s";
+
+
+    $("altitude").textContent =
+        state.y.toFixed(0) +
+        " m";
+
+
+    $("position").textContent =
+        state.x.toFixed(1) +
+        " m";
+
+
+    $("speed").textContent =
+        Math.hypot(
+            state.vx,
+            state.vy
+        ).toFixed(1) +
+        " m/s";
+
+
+    $("fuelRemaining").textContent =
+        state.fuel.toFixed(0) +
+        " kg";
+
+
+    $("phase").textContent =
+        state.phase;
+
+
+    $("status").textContent =
+        state.phase +
+        "｜高度 " +
+        state.y.toFixed(0) +
+        " m｜水平 " +
+        state.x.toFixed(0) +
+        " m";
+
+}
+
+
+/* =====================================================
+   發射
+===================================================== */
+
+$("startButton")
+.addEventListener(
+    "click",
+    function(){
+
+        /*
+           如果已經在跑，
+           不重複啟動
+        */
+
+        if(running){
+
+            return;
+
+        }
+
+
+        /*
+           如果已經著陸，
+           重新開始
+        */
+
+        if(state.landed){
+
+            resetSimulation();
+
+        }
+
+
+        running = true;
+
+
+        state.phase =
+            "上升";
+
+
+        /*
+           使用 setInterval
+           保持手機 / iPad 穩定
+        */
+
+        if(timer !== null){
+
+            clearInterval(timer);
+
+        }
+
+
+        timer =
+            setInterval(
+                function(){
+
+                    if(running){
+
+                        simulationStep();
+
+                    }
+
+                },
+                20
+            );
+
+
+        render();
+
+    }
+);
+
+
+/* =====================================================
+   停止
+===================================================== */
+
+$("stopButton")
+.addEventListener(
+    "click",
+    function(){
+
+        running = false;
+
+
+        if(timer !== null){
+
+            clearInterval(timer);
+
+            timer = null;
+
+        }
+
+
+        if(!state.landed){
+
+            state.phase =
+                "已停止";
+
+        }
+
+
+        render();
+
+    }
+);
+
+
+/* =====================================================
+   重設
+===================================================== */
+
+$("resetButton")
+.addEventListener(
+    "click",
+    function(){
+
+        resetSimulation();
+
+    }
+);
+
+
+/* =====================================================
+   啟動時初始化
+===================================================== */
+
+resetSimulation();
+
+</script>
+
+</body>
+</html>
